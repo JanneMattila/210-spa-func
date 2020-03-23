@@ -1,20 +1,48 @@
 ﻿using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Protocols;
+using Microsoft.IdentityModel.Protocols.OpenIdConnect;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.Net.Http.Headers;
 
 namespace Func
 {
     public class SecurityValidator : ISecurityValidator
     {
-        public SecurityValidator()
+        private readonly SecurityValidatorOptions _securityValidatorOptions;
+        private TokenValidationParameters _tokenValidationParameters;
+
+        public SecurityValidator(SecurityValidatorOptions securityValidatorOptions)
         {
+            _securityValidatorOptions = securityValidatorOptions;
         }
 
-        public async Task<ClaimsPrincipal> GetClaimsPrincipalAsync(HttpRequest req, ILogger log)
+        public async Task InitializeAsync()
+        {
+            var configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(
+                $"{_securityValidatorOptions.Authority}/.well-known/openid-configuration",
+                new OpenIdConnectConfigurationRetriever());
+
+            var configuration = await configurationManager.GetConfigurationAsync();
+            _tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidAudiences = new[]
+                {
+                    _securityValidatorOptions.Audience,
+                    _securityValidatorOptions.ClientId
+                },
+                ValidIssuers = _securityValidatorOptions.ValidIssuers,
+                IssuerSigningKeys = configuration.SigningKeys
+            };
+        }
+
+        public ClaimsPrincipal GetClaimsPrincipal(HttpRequest req, ILogger log)
         {
             if (!req.Headers.ContainsKey(HeaderNames.Authorization))
             {
@@ -31,8 +59,21 @@ namespace Func
             }
 
             var accessToken = authorizationValue[1];
+            var tokenHandler = new JwtSecurityTokenHandler();
 
-            throw new NotImplementedException();
+            try
+            {
+                var claimsPrincipal = tokenHandler.ValidateToken(
+                    accessToken, 
+                    _tokenValidationParameters, 
+                    out SecurityToken securityToken);
+                return claimsPrincipal;
+            }
+            catch (Exception ex)
+            {
+                log.LogError(ex, "Token validation failed");
+                return null;
+            }
         }
     }
 }

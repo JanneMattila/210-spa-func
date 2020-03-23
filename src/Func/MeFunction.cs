@@ -11,14 +11,14 @@ namespace Func
     public static class MeFunction
     {
         [FunctionName("MeFunction")]
-        public static async Task<IActionResult> Run(
+        public static IActionResult Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req,
             ILogger log,
             ISecurityValidator securityValidator)
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
 
-            var principal = await securityValidator.GetClaimsPrincipalAsync(req, log);
+            var principal = securityValidator.GetClaimsPrincipal(req, log);
             if (principal == null)
             {
                 return new UnauthorizedResult();

@@ -10,6 +10,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "deploy", "deploy", "{9CB548
 		deploy\azuredeploy.json = deploy\azuredeploy.json
 		deploy\azuredeploy.parameters.json = deploy\azuredeploy.parameters.json
 		deploy\deploy.ps1 = deploy\deploy.ps1
+		deploy\deploy_aad_apps.ps1 = deploy\deploy_aad_apps.ps1
 		deploy\deploy_web.ps1 = deploy\deploy_web.ps1
 	EndProjectSection
 EndProject

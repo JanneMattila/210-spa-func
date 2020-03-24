@@ -8,17 +8,24 @@ using Microsoft.Extensions.Logging;
 
 namespace Func
 {
-    public static class MeFunction
+    public class MeFunction
     {
-        [FunctionName("MeFunction")]
-        public static IActionResult Run(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req,
-            ILogger log,
+        private readonly ISecurityValidator _securityValidator;
+
+        public MeFunction(
             ISecurityValidator securityValidator)
+        {
+            _securityValidator = securityValidator;
+        }
+
+        [FunctionName("Me")]
+        public async Task<IActionResult> Run(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req,
+            ILogger log)
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
 
-            var principal = securityValidator.GetClaimsPrincipal(req, log);
+            var principal = await _securityValidator.GetClaimsPrincipalAsync(req, log);
             if (principal == null)
             {
                 return new UnauthorizedResult();

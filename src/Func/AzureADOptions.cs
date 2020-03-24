@@ -2,7 +2,7 @@
 
 namespace Func
 {
-    public class SecurityValidatorOptions
+    public class AzureADOptions
     {
         public string Authority { get; set; }
         public string AadInstance { get; set; }

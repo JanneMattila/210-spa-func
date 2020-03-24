@@ -35,8 +35,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "doc", "doc", "{AFDA2978-8523-47EB-AC59-501B28ADAFAF}"
 	ProjectSection(SolutionItems) = preProject
 		doc\functions.http = doc\functions.http
-		doc\functions_dev_helpers.http = doc\functions_dev_helpers.http
-		doc\Test1.txt = doc\Test1.txt
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{0F3D56DC-DA36-46E5-AF8C-9A43345A1319}"
@@ -46,9 +44,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{
 		.github\workflows\ci.yml = .github\workflows\ci.yml
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Spa", "src\Spa\Spa.csproj", "{735E01C8-0370-4710-927F-138CDAFA2B3C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Spa", "src\Spa\Spa.csproj", "{735E01C8-0370-4710-927F-138CDAFA2B3C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Func", "src\Func\Func.csproj", "{5D367E57-E6A4-4DAB-ABED-B727BDF6E1FC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Func", "src\Func\Func.csproj", "{5D367E57-E6A4-4DAB-ABED-B727BDF6E1FC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

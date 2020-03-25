@@ -1,7 +1,17 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <title>Amazerrr</title>
+    <script type="text/javascript">
+        var sdkInstance = "appInsightsSDK"; window[sdkInstance] = "appInsights"; var aiName = window[sdkInstance], aisdk = window[aiName] || function (n) { var o = { config: n, initialize: !0 }, t = document, e = window, i = "script"; setTimeout(function () { var e = t.createElement(i); e.src = n.url || "https://az416426.vo.msecnd.net/scripts/b/ai.2.min.js", t.getElementsByTagName(i)[0].parentNode.appendChild(e) }); try { o.cookie = t.cookie } catch (e) { } function a(n) { o[n] = function () { var e = arguments; o.queue.push(function () { o[n].apply(o, e) }) } } o.queue = [], o.version = 2; for (var s = ["Event", "PageView", "Exception", "Trace", "DependencyData", "Metric", "PageViewPerformance"]; s.length;)a("track" + s.pop()); var r = "Track", c = r + "Page"; a("start" + c), a("stop" + c); var u = r + "Event"; if (a("start" + u), a("stop" + u), a("addTelemetryInitializer"), a("setAuthenticatedUserContext"), a("clearAuthenticatedUserContext"), a("flush"), o.SeverityLevel = { Verbose: 0, Information: 1, Warning: 2, Error: 3, Critical: 4 }, !(!0 === n.disableExceptionTracking || n.extensionConfig && n.extensionConfig.ApplicationInsightsAnalytics && !0 === n.extensionConfig.ApplicationInsightsAnalytics.disableExceptionTracking)) { a("_" + (s = "onerror")); var p = e[s]; e[s] = function (e, n, t, i, a) { var r = p && p(e, n, t, i, a); return !0 !== r && o["_" + s]({ message: e, url: n, lineNumber: t, columnNumber: i, error: a }), r }, n.autoExceptionInstrumented = !0 } return o }(
+            {
+                instrumentationKey: "",
+                disableFetchTracking: false,
+                enableCorsCorrelation: true
+            }
+        ); (window[aiName] = aisdk).queue && 0 === aisdk.queue.length && aisdk.trackPageView({});
+    </script>
+    <title>SPA - Func Demo</title>
+    <script type="text/javascript" src="https://alcdn.msauth.net/lib/1.2.0/js/msal.min.js"></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <style type="text/css">
@@ -20,26 +30,75 @@
     </style>
     <script>
         let endpoint = "http://localhost:7071";
+        let clientId = "";
+        let tenantId = "";
+        let applicationIdURI = "";
+
         fetch("/configuration.json")
             .then(response => {
                 return response.json();
             })
             .then(data => {
                 console.log(data);
-                endpoint = data.endpoint;
+                aisdk.config.instrumentationKey = data.instrumentationKey;
+                clientId = data.clientId;
+                tenantId = data.tenantId;
+                applicationIdURI = data.applicationIdURI;
             })
             .catch(error => {
                 console.log(error);
                 solutionElement.innerHTML = "Oh no! Couldn't fetch configuration settings 😥";
             });
+
+        function login() {
+            const config = {
+                auth: {
+                    clientId: clientId,
+                    authority: "https://login.microsoftonline.com/" + tenantId
+                },
+                cache: {
+                    cacheLocation: "localStorage"
+                }
+            }
+
+            // create UserAgentApplication instance
+            const myMSALObj = new UserAgentApplication(config);
+
+            function authCallback(error, response) {
+                // handle redirect response
+                console.log(error);
+                console.log(response);
+            }
+
+            // (optional when using redirect methods) register redirect call back for Success or Error
+            myMSALObj.handleRedirectCallback(authCallback);
+
+            const loginRequest = {
+                scopes: ["https://graph.microsoft.com/User.Read"]
+            }
+
+            userAgentApplication.acquireTokenSilent(accessTokenRequest).then(function (accessTokenResponse) {
+                // Acquire token silent success
+                // Call API with token
+                console.log(accessTokenResponse);
+                let accessToken = accessTokenResponse.accessToken;
+            }).catch(function (error) {
+                //Acquire token silent failure, and send an interactive request
+                console.log(error);
+                if (error.errorMessage.indexOf("interaction_required") !== -1) {
+                    userAgentApplication.acquireTokenRedirect(accessTokenRequest);
+                }
+            });
+        }
     </script>
 </head>
 <body>
     <h1>
         SPA + Func
     </h1>
+    <div id="user">Anonymous</div>
     <p>
-        TBD
+        <input type="button" value="Login" onclick="login();" />
     </p>
 </body>
 </html>

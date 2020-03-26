@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IdentityModel.Tokens.Jwt;
-using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,7 +28,7 @@ namespace Func
         private async Task InitializeAsync()
         {
             var configurationManager = new ConfigurationManager<OpenIdConnectConfiguration>(
-                $"{_securityValidatorOptions.Authority}/.well-known/openid-configuration",
+                $"https://login.microsoftonline.com/{_securityValidatorOptions.TenantId}/v2.0/.well-known/openid-configuration",
                 new OpenIdConnectConfigurationRetriever());
 
             var configuration = await configurationManager.GetConfigurationAsync();
@@ -40,7 +39,10 @@ namespace Func
                     _securityValidatorOptions.Audience,
                     _securityValidatorOptions.ClientId
                 },
-                ValidIssuers = _securityValidatorOptions.ValidIssuers,
+                ValidIssuers = new[]
+                {
+                    $"https://sts.windows.net/{_securityValidatorOptions.TenantId}/"
+                },
                 IssuerSigningKeys = configuration.SigningKeys
             };
         }

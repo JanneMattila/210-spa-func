@@ -23,7 +23,7 @@ namespace Func
             [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req,
             ILogger log)
         {
-            log.LogInformation("C# HTTP trigger function processed a request.");
+            log.LogInformation("Me function processing request.");
 
             var principal = await _securityValidator.GetClaimsPrincipalAsync(req, log);
             if (principal == null)

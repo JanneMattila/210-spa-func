@@ -6,15 +6,12 @@
 
     "Storage": "UseDevelopmentStorage=true",
 
-    "AzureAD:Authority": "",
-    "AzureAD:AadInstance": "",
     "AzureAD:Audience": "",
     "AzureAD:ClientId": "",
-    "AzureAD:TenantId": "",
-    "AzureAD:ValidIssuers": ""
+    "AzureAD:TenantId": ""
   },
   "Host": {
-    "CORS": "https://localhost:44334",
+    "CORS": "https://localhost:44387",
     "CORSCredentials": true
   }
 }

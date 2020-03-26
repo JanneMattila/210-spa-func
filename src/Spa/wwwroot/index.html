@@ -11,7 +11,7 @@
         ); (window[aiName] = aisdk).queue && 0 === aisdk.queue.length && aisdk.trackPageView({});
     </script>
     <title>SPA - Func Demo</title>
-    <script type="text/javascript" src="https://alcdn.msauth.net/lib/1.2.0/js/msal.min.js"></script>
+    <script type="text/javascript" src="https://alcdn.msauth.net/lib/1.2.1/js/msal.min.js" integrity="sha384-Z4L5heyGO9VZ/MBCDx9GRtQW50Hrmp32ByIKuqwFesWyB+MDNy9ueVgclolfwj1Q" crossorigin="anonymous"></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
     <style type="text/css">
@@ -34,61 +34,95 @@
         let tenantId = "";
         let applicationIdURI = "";
 
+        let userAgentApplication;
+        let accessToken;
+
+        const accessTokenRequest = {
+            scopes: ["api://spa-func-backend.local/Sales.ReadWrite" /*"User.Read"*/]
+        }
+
         fetch("/configuration.json")
             .then(response => {
                 return response.json();
             })
             .then(data => {
                 console.log(data);
-                aisdk.config.instrumentationKey = data.instrumentationKey;
-                clientId = data.clientId;
-                tenantId = data.tenantId;
-                applicationIdURI = data.applicationIdURI;
+                processConfiguration(data)
             })
             .catch(error => {
                 console.log(error);
                 solutionElement.innerHTML = "Oh no! Couldn't fetch configuration settings 😥";
             });
 
-        function login() {
+        function processConfiguration(data) {
+            aisdk.config.instrumentationKey = data.instrumentationKey;
+            clientId = data.clientId;
+            tenantId = data.tenantId;
+            applicationIdURI = data.applicationIdURI;
+
             const config = {
                 auth: {
                     clientId: clientId,
-                    authority: "https://login.microsoftonline.com/" + tenantId
-                },
-                cache: {
-                    cacheLocation: "localStorage"
+                    authority: "https://login.microsoftonline.com/" + tenantId,
                 }
             }
 
-            // create UserAgentApplication instance
-            const myMSALObj = new UserAgentApplication(config);
-
+            userAgentApplication = new Msal.UserAgentApplication(config);
             function authCallback(error, response) {
-                // handle redirect response
-                console.log(error);
-                console.log(response);
+                // Handle redirect responses
+                if (error) {
+                    console.log(error);
+                }
+                else {
+                    if (response.tokenType === "id_token") {
+                        console.log('id_token acquired at: ' + new Date().toString());
+                    }
+                    else if (response.tokenType === "access_token") {
+                        console.log('access_token acquired at: ' + new Date().toString());
+                        accessToken = response.accessToken;
+                    }
+                    else {
+                        console.log("token type is:" + response.tokenType);
+                    }
+                }
             }
 
-            // (optional when using redirect methods) register redirect call back for Success or Error
-            myMSALObj.handleRedirectCallback(authCallback);
-
-            const accessTokenRequest = {
-                scopes: ["https://graph.microsoft.com/User.Read"]
-            }
+            userAgentApplication.handleRedirectCallback(authCallback);
 
             userAgentApplication.acquireTokenSilent(accessTokenRequest).then(function (accessTokenResponse) {
                 // Acquire token silent success
                 // Call API with token
                 console.log(accessTokenResponse);
-                let accessToken = accessTokenResponse.accessToken;
+                accessToken = accessTokenResponse.accessToken;
             }).catch(function (error) {
-                //Acquire token silent failure, and send an interactive request
-                console.log(error);
-                if (error.errorMessage.indexOf("interaction_required") !== -1) {
+                // Acquire token silent failure, and send an interactive request
+                if (error.errorMessage.indexOf("User login is required") !== -1) {
                     userAgentApplication.acquireTokenRedirect(accessTokenRequest);
                 }
             });
+        }
+
+        function login() {
+            userAgentApplication.loginRedirect(accessTokenRequest);
+        }
+
+        function callMe() {
+            fetch(endpoint + "/api/me",
+                {
+                    headers: {
+                        "Accept": "application/json",
+                        "Authorization": "Bearer " + accessToken
+                    }
+                })
+                .then(response => {
+                    return response.json();
+                })
+                .then(data => {
+                    console.log(data);
+                })
+                .catch(error => {
+                    console.log(error);
+                });
         }
     </script>
 </head>
@@ -99,6 +133,9 @@
     <div id="user">Anonymous</div>
     <p>
         <input type="button" value="Login" onclick="login();" />
+    </p>
+    <p>
+        <input type="button" value="Me" onclick="callMe();" />
     </p>
 </body>
 </html>

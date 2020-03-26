@@ -30,16 +30,10 @@
     </style>
     <script>
         let endpoint = "http://localhost:7071";
-        let clientId = "";
-        let tenantId = "";
-        let applicationIdURI = "";
 
         let userAgentApplication;
+        let accessTokenRequest;
         let accessToken;
-
-        const accessTokenRequest = {
-            scopes: ["api://spa-func-backend.local/Sales.ReadWrite" /*"User.Read"*/]
-        }
 
         fetch("/configuration.json")
             .then(response => {
@@ -56,14 +50,14 @@
 
         function processConfiguration(data) {
             aisdk.config.instrumentationKey = data.instrumentationKey;
-            clientId = data.clientId;
-            tenantId = data.tenantId;
-            applicationIdURI = data.applicationIdURI;
+            accessTokenRequest = {
+                scopes: [data.applicationIdURI + "Sales.ReadWrite"]
+            }
 
             const config = {
                 auth: {
-                    clientId: clientId,
-                    authority: "https://login.microsoftonline.com/" + tenantId,
+                    clientId: data.clientId,
+                    authority: "https://login.microsoftonline.com/" + data.tenantId,
                 }
             }
 
@@ -80,6 +74,7 @@
                     else if (response.tokenType === "access_token") {
                         console.log('access_token acquired at: ' + new Date().toString());
                         accessToken = response.accessToken;
+                        afterLogin(response.account);
                     }
                     else {
                         console.log("token type is:" + response.tokenType);
@@ -94,6 +89,7 @@
                 // Call API with token
                 console.log(accessTokenResponse);
                 accessToken = accessTokenResponse.accessToken;
+                afterLogin(accessTokenResponse.account);
             }).catch(function (error) {
                 // Acquire token silent failure, and send an interactive request
                 if (error.errorMessage.indexOf("User login is required") !== -1) {
@@ -104,6 +100,12 @@
 
         function login() {
             userAgentApplication.loginRedirect(accessTokenRequest);
+        }
+
+        function afterLogin(account) {
+            document.getElementById("loginButton").style.display = "none";
+            document.getElementById("meButton").style.display = "";
+            document.getElementById("user").innerText = account.name;
         }
 
         function callMe() {
@@ -132,10 +134,10 @@
     </h1>
     <div id="user">Anonymous</div>
     <p>
-        <input type="button" value="Login" onclick="login();" />
+        <input id="loginButton" type="button" value="Login" onclick="login();" />
     </p>
     <p>
-        <input type="button" value="Me" onclick="callMe();" />
+        <input id="meButton" type="button" value="Me" onclick="callMe();" style="display: none" />
     </p>
 </body>
 </html>

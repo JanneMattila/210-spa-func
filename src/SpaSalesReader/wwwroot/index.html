@@ -10,7 +10,7 @@
             }
         ); (window[aiName] = aisdk).queue && 0 === aisdk.queue.length && aisdk.trackPageView({});
     </script>
-    <title>SPA - Func Demo</title>
+    <title>SPA "Sales Reader" - Func Demo</title>
     <script type="text/javascript" src="https://alcdn.msauth.net/lib/1.2.1/js/msal.min.js" integrity="sha384-Z4L5heyGO9VZ/MBCDx9GRtQW50Hrmp32ByIKuqwFesWyB+MDNy9ueVgclolfwj1Q" crossorigin="anonymous"></script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
@@ -51,7 +51,7 @@
         function processConfiguration(data) {
             aisdk.config.instrumentationKey = data.instrumentationKey;
             accessTokenRequest = {
-                scopes: [data.applicationIdURI + "Sales.ReadWrite"]
+                scopes: [data.applicationIdURI + "Sales.Read"]
             }
 
             const config = {
@@ -130,7 +130,7 @@
 </head>
 <body>
     <h1>
-        SPA + Func
+        SPA "Sales.Reader" + Func
     </h1>
     <div id="user">Anonymous</div>
     <p>

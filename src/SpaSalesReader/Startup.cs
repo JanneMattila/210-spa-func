@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Spa
+namespace SpaSalesReader
 {
     public class Startup
     {

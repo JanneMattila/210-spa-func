@@ -52,8 +52,36 @@
             aisdk.config.instrumentationKey = data.instrumentationKey;
             accessTokenRequest = {
                 scopes: [
+                    /*
+                     * This permission causes following error:
+                     * AADSTS70011: The provided request must include a 'scope' input parameter.
+                     * Because scope part is mandatory:
+                     * data.applicationIdURI
+                     */
+
+                    /*
+                     * This permission works because it matches
+                     * with the permission configured in Azure AD.
+                     * This SPA has API Permission to the backend
+                     * app for this API:
+                     * data.applicationIdURI + "Sales.Read"
+                     * 
+                     * _HOWEVER_ it means that application
+                     * requests smaller scope than it can.
+                     * Example: User opens only readonly session.
+                     */
+                    // data.applicationIdURI + "Sales.Read"
+
+                    /*
+                     * This permission works because it matches
+                     * with the permission configured in Azure AD.
+                     * This SPA has API Permission to the backend
+                     * app for these APIs:
+                     * data.applicationIdURI + "Sales.Read",
+                     * data.applicationIdURI + "Sales.ReadWrite"
+                     */
                     data.applicationIdURI + "Sales.Read",
-                    data.applicationIdURI + "Sales.ReadWrite"
+                    data.applicationIdURI + "Sales.Read"
                 ]
             }
 

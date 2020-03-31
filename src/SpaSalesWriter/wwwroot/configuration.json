@@ -1,0 +1,7 @@
+{
+  "endpoint": "http://localhost:7071",
+  "instrumentationKey": "<!-- guid like identifier -->",
+  "clientId": "<!-- guid like identifier -->",
+  "tenantId": "<!-- guid like identifier -->",
+  "applicationIdURI": "<!-- web address like identifier  -->"
+}

@@ -46,6 +46,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Func", "src\Func\Func.cspro
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SpaSalesReader", "src\SpaSalesReader\SpaSalesReader.csproj", "{A70EBDEC-42C0-48A7-83AE-98C3A826CEEA}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SpaSalesWriter", "src\SpaSalesWriter\SpaSalesWriter.csproj", "{AE923CC7-4243-40F1-B2F7-595DE20B37A4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -60,6 +62,10 @@ Global
 		{A70EBDEC-42C0-48A7-83AE-98C3A826CEEA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A70EBDEC-42C0-48A7-83AE-98C3A826CEEA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A70EBDEC-42C0-48A7-83AE-98C3A826CEEA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE923CC7-4243-40F1-B2F7-595DE20B37A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE923CC7-4243-40F1-B2F7-595DE20B37A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE923CC7-4243-40F1-B2F7-595DE20B37A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE923CC7-4243-40F1-B2F7-595DE20B37A4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -72,6 +78,7 @@ Global
 		{639178D8-17FC-41F3-B05E-CCB27B68F520} = {0F3D56DC-DA36-46E5-AF8C-9A43345A1319}
 		{5D367E57-E6A4-4DAB-ABED-B727BDF6E1FC} = {97624CD0-BD0B-403C-B499-9724A09AD24C}
 		{A70EBDEC-42C0-48A7-83AE-98C3A826CEEA} = {97624CD0-BD0B-403C-B499-9724A09AD24C}
+		{AE923CC7-4243-40F1-B2F7-595DE20B37A4} = {97624CD0-BD0B-403C-B499-9724A09AD24C}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {7116710A-7D27-4B61-BF4E-1B2F966352A2}

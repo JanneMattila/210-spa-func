@@ -11,7 +11,7 @@
     "AzureAD:TenantId": ""
   },
   "Host": {
-    "CORS": "https://localhost:44387",
+    "CORS": "https://localhost:44387,https://localhost:44388",
     "CORSCredentials": true
   }
 }

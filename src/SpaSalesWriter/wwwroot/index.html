@@ -51,7 +51,10 @@
         function processConfiguration(data) {
             aisdk.config.instrumentationKey = data.instrumentationKey;
             accessTokenRequest = {
-                scopes: [data.applicationIdURI + "Sales.Read"]
+                scopes: [
+                    data.applicationIdURI + "Sales.Read",
+                    data.applicationIdURI + "Sales.ReadWrite"
+                ]
             }
 
             const config = {

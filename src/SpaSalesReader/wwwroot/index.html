@@ -51,7 +51,31 @@
         function processConfiguration(data) {
             aisdk.config.instrumentationKey = data.instrumentationKey;
             accessTokenRequest = {
-                scopes: [data.applicationIdURI + "Sales.Read"]
+                scopes: [
+                    /*
+                     * This permission causes following error:
+                     * AADSTS70011: The provided request must include a 'scope' input parameter.
+                     * Because scope part is mandatory:
+                     * data.applicationIdURI
+                     */
+
+                    /*
+                     * This permission launches "Permissions requested" dialog
+                     * but even if the permission "Accept"ed then it does not
+                     * apply since this permission is not set for this SPA
+                     * in ther API permissions:
+                     * data.applicationIdURI + "Sales.ReadWrite"
+                     */
+
+                    /*
+                     * This permission works because it matches
+                     * with the permission configured in Azure AD.
+                     * This SPA has API Permission to the backend
+                     * app for this API:
+                     * data.applicationIdURI + "Sales.Read"
+                     */
+                    data.applicationIdURI + "Sales.Read"
+                ]
             }
 
             const config = {

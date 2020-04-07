@@ -18,6 +18,7 @@ namespace Func
                 {
                     configuration.GetSection("AzureAD").Bind(settings);
                 });
+            builder.Services.AddSingleton<ISalesRepository, SalesRepository>();
             builder.Services.AddSingleton<ISecurityValidator, SecurityValidator>();
         }
     }

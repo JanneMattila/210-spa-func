@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -12,11 +13,14 @@ namespace Func
     public class SalesFunction
     {
         private readonly ISecurityValidator _securityValidator;
+        private readonly ISalesRepository _salesRepository;
 
         public SalesFunction(
-            ISecurityValidator securityValidator)
+            ISecurityValidator securityValidator,
+            ISalesRepository salesRepository)
         {
             _securityValidator = securityValidator;
+            _salesRepository = salesRepository;
         }
 
         [FunctionName("Sales")]
@@ -33,27 +37,60 @@ namespace Func
                 return new UnauthorizedResult();
             }
 
+            log.LogInformation("Processing {method} request", req.Method);
             return req.Method switch
             {
-                "GET" => Get(req, id),
-                "POST" => Post(req, id),
-                "DELETE" => Delete(req, id),
+                "GET" => Get(log, principal, id),
+                "POST" => Post(log, principal, req, id),
+                "DELETE" => Delete(log, principal, id),
                 _ => new StatusCodeResult((int)HttpStatusCode.NotImplemented)
             };
         }
 
-        private static IActionResult Get(HttpRequest req, string id)
+        private IActionResult Get(ILogger log, ClaimsPrincipal principal, string id)
         {
-            return new OkObjectResult($"sales data fetch {id}");
+            if (!(principal.HasPermission(PermissionConstants.SalesRead) ||
+                principal.HasPermission(PermissionConstants.SalesReadWrite)))
+            {
+                log.LogWarning("User {user} does not have (at least) permission {permission}", principal.Identity.Name, PermissionConstants.SalesRead);
+                return new UnauthorizedResult();
+            }
+
+            if (string.IsNullOrEmpty(id))
+            {
+                log.LogTrace("Fetch all data");
+                var response = _salesRepository.Get();
+                return new OkObjectResult(response);
+            }
+            else
+            {
+                log.LogTrace("Fetch data with {id}", id);
+                var response = _salesRepository.Get(id);
+                if (response == null)
+                {
+                    return new NotFoundResult();
+                }
+                return new OkObjectResult(response);
+            }
         }
 
-        private static IActionResult Post(HttpRequest req, string id)
+        private IActionResult Post(ILogger log, ClaimsPrincipal principal, HttpRequest req, string id)
         {
+            if (!principal.HasPermission(PermissionConstants.SalesReadWrite))
+            {
+                log.LogWarning("User {user} does not have permission {permission}", principal.Identity.Name, PermissionConstants.SalesReadWrite);
+                return new UnauthorizedResult();
+            }
             return new OkObjectResult($"sales data updated {id}");
         }
 
-        private static IActionResult Delete(HttpRequest req, string id)
+        private IActionResult Delete(ILogger log, ClaimsPrincipal principal, string id)
         {
+            if (!principal.HasPermission(PermissionConstants.SalesReadWrite))
+            {
+                log.LogWarning("User {user} does not have permission {permission}", principal.Identity.Name, PermissionConstants.SalesReadWrite);
+                return new UnauthorizedResult();
+            }
             return new OkResult();
         }
     }

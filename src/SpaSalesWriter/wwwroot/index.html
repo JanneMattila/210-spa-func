@@ -158,10 +158,29 @@
                 });
         }
 
-
-        function callSales() {
+        function callGetSales() {
             fetch(endpoint + "/api/sales",
                 {
+                    headers: {
+                        "Accept": "application/json",
+                        "Authorization": "Bearer " + accessToken
+                    }
+                })
+                .then(response => {
+                    return response.json();
+                })
+                .then(data => {
+                    console.log(data);
+                })
+                .catch(error => {
+                    console.log(error);
+                });
+        }
+
+        function callDeleteSales() {
+            fetch(endpoint + "/api/sales/1",
+                {
+                    method: "DELETE",
                     headers: {
                         "Accept": "application/json",
                         "Authorization": "Bearer " + accessToken
@@ -192,7 +211,8 @@
         <br />
         <br />
         <label for="salesButton">Sales</label>
-        <input id="salesButton" type="button" value="GET" onclick="callSales();" />
+        <input id="getSalesButton" type="button" value="GET" onclick="callGetSales();" />
+        <input id="deleteSalesButton" type="button" value="DELETE" onclick="callDeleteSales();" />
     </div>
 </body>
 </html>

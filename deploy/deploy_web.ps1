@@ -61,7 +61,7 @@ Write-Host "Static website endpoint: $webStorageUri"
   `"endpoint`": `"$FunctionsUri`", 
   `"clientId`": `"$ClientId`",
   `"tenantId`": `"$TenantId`",
-  `"applicationIdURI`": `"$ApplicationIdURI`"
+  `"applicationIdURI`": `"$ApplicationIdURI/`"
 }
 "@ | Set-Content (Join-Path -Path $AppRootFolder -ChildPath configuration.json)
 

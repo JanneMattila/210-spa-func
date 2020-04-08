@@ -50,6 +50,12 @@ if ($null -ne $apiApp)
 {
     # Applications have been already created
     Write-Host "Applications have been already created"
+
+    if ($UpdateReplyUrl)
+    {
+        Set-AzureADApplication -ObjectId $spaReaderApp.ObjectId -ReplyUrls $SPAReaderUri
+        Set-AzureADApplication -ObjectId $spaWriterApp.ObjectId -ReplyUrls $SPAWriterUri
+    }
 }
 else
 {
@@ -93,7 +99,7 @@ else
         -Oauth2Permissions $permissions
     $apiApp
 
-    $spn = New-AzureADServicePrincipal -AppId $apiApp.AppId
+    $apiSpn = New-AzureADServicePrincipal -AppId $apiApp.AppId
 
     ###########################
     # Setup SPASalesReader app:
@@ -129,6 +135,8 @@ else
         -ReplyUrls $SPAReaderUri `
         -RequiredResourceAccess $readerAccesses
     $spaReaderApp
+
+    $spaReaderSpn = New-AzureADServicePrincipal -AppId $spaReaderApp.AppId
 
     ###########################
     # Setup SPASalesWriter app:
@@ -170,6 +178,8 @@ else
         -ReplyUrls $SPAWriterUri `
         -RequiredResourceAccess $writerAccesses
     $spaWriterApp
+
+    $spaWriterSpn = New-AzureADServicePrincipal -AppId $spaWriterApp.AppId
 }
 
 $values = new-object psobject -property @{

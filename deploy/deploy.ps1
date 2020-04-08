@@ -8,12 +8,6 @@ Param (
     [Parameter(HelpMessage="Deployment environment name")] 
     [string] $EnvironmentName = "local",
 
-    [Parameter(HelpMessage="Flag to indicate if AzureAD applications automation should be executed")] 
-    [switch] $DeployToAzureAD,
-    
-    [Parameter(HelpMessage="Flag to indicate if SPA apps should be deployed")] 
-    [switch] $DeploySPAs,
-
     [Parameter(HelpMessage="App root folder path to publish e.g. ..\src\SpaSalesReader\wwwroot\")] 
     [string] $AppRootFolderReader = "..\src\SpaSalesReader\wwwroot\",
 
@@ -49,14 +43,13 @@ if ($null -eq (Get-AzResourceGroup -Name $ResourceGroupName -Location $Location 
     New-AzResourceGroup -Name $ResourceGroupName -Location $Location -Verbose
 }
 
-if ($DeployToAzureAD)
-{
-    . $PSScriptRoot\deploy_aad_apps.ps1 -EnvironmentName $EnvironmentName
-}
+$azureADdeployment = . $PSScriptRoot\deploy_aad_apps.ps1 -EnvironmentName $EnvironmentName
 
 # Additional parameters that we pass to the template deployment
 $additionalParameters = New-Object -TypeName hashtable
-#$additionalParameters['name'] = $value
+$additionalParameters['clientId'] = $azureADdeployment.ApiApp
+$additionalParameters['tenantId'] = $azureADdeployment.TenantId
+$additionalParameters['applicationIdURI'] = $azureADdeployment.ApplicationIdURI
 
 $result = New-AzResourceGroupDeployment `
     -DeploymentName $deploymentName `
@@ -99,41 +92,34 @@ Write-Host "Static website endpoint for Writer: $webWriterStorageUri"
 Write-Host "##vso[task.setvariable variable=Custom.WebAppName;]$webAppName"
 Write-Host "##vso[task.setvariable variable=Custom.WebAppUri;]$webAppUri"
 
-$azureADdeployment = $null
-if ($DeployToAzureAD)
+$azureADdeployment = . $PSScriptRoot\deploy_aad_apps.ps1 `
+    -EnvironmentName $EnvironmentName `
+    -SPAReaderUri $webReaderStorageUri `
+    -SPAWriterUri $webWriterStorageUri `
+    -UpdateReplyUrl # Update reply urls
+
+if (![string]::IsNullOrEmpty($AppRootFolderReader))
 {
-    $azureADdeployment = . $PSScriptRoot\deploy_aad_apps.ps1 `
-        -EnvironmentName $EnvironmentName `
-        -SPAReaderUri $webReaderStorageUri `
-        -SPAWriterUri $webWriterStorageUri `
-        -UpdateReplyUrl # Update reply urls
+    # Deploy SPA Reader
+    . $PSScriptRoot\deploy_web.ps1 `
+        -ResourceGroupName $ResourceGroupName `
+        -FunctionsUri $webAppUri `
+        -ClientId $azureADdeployment.ReaderApp `
+        -TenantId $azureADdeployment.TenantId `
+        -ApplicationIdURI $azureADdeployment.ApplicationIdURI `
+        -WebStorageName $webReaderStorageAccount.StorageAccountName `
+        -AppRootFolder $AppRootFolderReader
 }
 
-if ($DeploySPAs)
+if (![string]::IsNullOrEmpty($AppRootFolderWriter))
 {
-    if (![string]::IsNullOrEmpty($AppRootFolderReader))
-    {
-        # Deploy SPA Reader
-        . $PSScriptRoot\deploy_web.ps1 `
-            -ResourceGroupName $ResourceGroupName `
-            -FunctionsUri $webAppUri `
-            -ClientId $azureADdeployment.ReaderApp `
-            -TenantId $azureADdeployment.TenantId `
-            -ApplicationIdURI $azureADdeployment.ApplicationIdURI `
-            -WebStorageName $webReaderStorageAccount.StorageAccountName `
-            -AppRootFolder $AppRootFolderReader
-    }
-
-    if (![string]::IsNullOrEmpty($AppRootFolderWriter))
-    {
-        # Deploy SPA Writer
-        . $PSScriptRoot\deploy_web.ps1 `
-            -ResourceGroupName $ResourceGroupName `
-            -FunctionsUri $webAppUri `
-            -ClientId $azureADdeployment.WriterApp `
-            -TenantId $azureADdeployment.TenantId `
-            -ApplicationIdURI $azureADdeployment.ApplicationIdURI `
-            -WebStorageName $webWriterStorageAccount.StorageAccountName `
-            -AppRootFolder $AppRootFolderWriter
-    }
+    # Deploy SPA Writer
+    . $PSScriptRoot\deploy_web.ps1 `
+        -ResourceGroupName $ResourceGroupName `
+        -FunctionsUri $webAppUri `
+        -ClientId $azureADdeployment.WriterApp `
+        -TenantId $azureADdeployment.TenantId `
+        -ApplicationIdURI $azureADdeployment.ApplicationIdURI `
+        -WebStorageName $webWriterStorageAccount.StorageAccountName `
+        -AppRootFolder $AppRootFolderWriter
 }

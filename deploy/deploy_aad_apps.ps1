@@ -47,7 +47,14 @@ if ($null -ne $apiApp)
 {
     # Applications have been already created
     Write-Host "Applications have been already created"
-    return
+    $values = new-object psobject -property @{
+        ReaderApp = $spaReaderApp.AppId;
+        WriterApp = $spaWriterApp.AppId;
+        ApiApp = $apiApp.AppId;
+        TenantId = $tenant;
+        ApplicationIdURI = $apiApp.IdentifierUris[0];
+    }
+    return $values
 }
 
 ######################

@@ -42,16 +42,6 @@ stages:
         rootFolderOrFile: '$(Agent.TempDirectory)\WebAppContent'
         includeRootFolder: false
 
-    - task: VSTest@2
-      displayName: 'Test Assemblies'
-      inputs:
-        testAssemblyVer2: |
-         **\*.Tests.dll
-         !**\obj\**
-        platform: '$(BuildPlatform)'
-        configuration: '$(BuildConfiguration)'
-        diagnosticsEnabled: True
-
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Artifact: SpaSalesReader'
       inputs:

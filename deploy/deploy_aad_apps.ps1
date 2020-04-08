@@ -29,7 +29,7 @@ $accessToken = $azureSession.AccessToken
 $aadInstalledModule = Get-Module -Name "AzureAD" -ListAvailable
 if ($null -eq $aadInstalledModule)
 {
-    Install-Module AzureAD -Scope CurrentUser
+    Install-Module AzureAD -Scope CurrentUser -Force
 }
 else
 {

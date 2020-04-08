@@ -5,6 +5,12 @@ Param (
     [Parameter(HelpMessage="Deployment target resource group location")] 
     [string] $Location = "North Europe",
 
+    [Parameter(HelpMessage="Deployment environment name")] 
+    [string] $EnvironmentName = "local",
+
+    [Parameter(HelpMessage="Flag to indicate if AzureAD applications automation should be executed")] 
+    [switch] $DeployToAzureAD,
+
     [Parameter(HelpMessage="App root folder path to publish e.g. ..\src\SpaSalesReader\wwwroot\")] 
     [string] $AppRootFolderReader,
 
@@ -38,6 +44,11 @@ if ($null -eq (Get-AzResourceGroup -Name $ResourceGroupName -Location $Location 
 {
     Write-Warning "Resource group '$ResourceGroupName' doesn't exist and it will be created."
     New-AzResourceGroup -Name $ResourceGroupName -Location $Location -Verbose
+}
+
+if ($DeployToAzureAD)
+{
+    . $PSScriptRoot\deploy_aad_apps.ps1 -EnvironmentName $EnvironmentName
 }
 
 # Additional parameters that we pass to the template deployment
@@ -84,6 +95,16 @@ Write-Host "Static website endpoint for Writer: $webWriterStorageUri"
 # can be used in follow-up tasks such as application deployment
 Write-Host "##vso[task.setvariable variable=Custom.WebAppName;]$webAppName"
 Write-Host "##vso[task.setvariable variable=Custom.WebAppUri;]$webAppUri"
+
+$azureADdeployment = $null
+if ($DeployToAzureAD)
+{
+    $azureADdeployment = . $PSScriptRoot\deploy_aad_apps.ps1 `
+        -EnvironmentName $EnvironmentName `
+        -SPAReaderUri $webReaderStorageUri `
+        -SPAWriterUri $webWriterStorageUri `
+        -UpdateReplyUrl # Update reply urls
+}
 
 if (![string]::IsNullOrEmpty($AppRootFolderReader))
 {

@@ -1,6 +1,9 @@
 Param (
     [Parameter(HelpMessage="Deployment environment name")] 
     [string] $EnvironmentName = "local",
+    
+    [Parameter(HelpMessage="Flag to indicate if AzureAD applications reply urls should be updated")] 
+    [switch] $UpdateReplyUrl,
 
     [Parameter(HelpMessage="SPA Reader address root uri")] 
     [string] $SPAReaderUri = "https://localhost:44387/",

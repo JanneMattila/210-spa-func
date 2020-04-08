@@ -23,21 +23,17 @@
   },
   "variables": {
     "appName": "spafunc",
-    "webStorageName": "[concat('spaweb', uniqueString(resourceGroup().id))]",
-    "spaUri": "[concat('https://',variables('webStorageName'),'.z16.web.core.windows.net')]",
-    "appInsightsName": "[concat('ai-',variables('appName'))]",
+    "webStorageNameReader": "[concat('spareader', uniqueString(resourceGroup().id))]",
+    "webStorageNameWriter": "[concat('spawriter', uniqueString(resourceGroup().id))]",
+    "spaReaderUri": "[concat('https://',variables('webStorageNameReader'),'.z16.web.core.windows.net')]",
+    "spaWriterUri": "[concat('https://',variables('webStorageNameWriter'),'.z16.web.core.windows.net')]",
     "appStorageName": "[concat('spar', uniqueString(resourceGroup().id))]",
     "appServiceName": "[concat('azspafun-',variables('appName'),'-',uniqueString(resourceGroup().id))]",
-    "appServicePlanName": "[concat('azappplan-', variables('appName'))]",
-    "appAlertActionGroup": "[concat(variables('appName'), 'ActionGroup')]",
-    "appInsightsExceptionQueryName": "[concat(variables('appName'), 'AppInsightsExceptionQuery')]",
-    "appHighUsageAlertName": "[concat(variables('appName'), 'HighUsageAlert')]",
-    "spaAppPing": "SPAPing",
-    "backendPing": "BackendPing"
+    "appServicePlanName": "[concat('azappplan-', variables('appName'))]"
   },
   "resources": [
     {
-      "name": "[variables('webStorageName')]",
+      "name": "[variables('webStorageNameReader')]",
       "type": "Microsoft.Storage/storageAccounts",
       "location": "[parameters('location')]",
       "apiVersion": "2018-02-01",
@@ -63,18 +59,29 @@
       }
     },
     {
-      "name": "[variables('appInsightsName')]",
-      "type": "Microsoft.Insights/components",
+      "name": "[variables('webStorageNameWriter')]",
+      "type": "Microsoft.Storage/storageAccounts",
       "location": "[parameters('location')]",
-      "apiVersion": "2015-05-01",
-      "kind": "web",
-      "dependsOn": [],
-      "tags": {
-        "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Web/sites/', variables('appServiceName'))]": "Resource"
+      "apiVersion": "2018-02-01",
+      "sku": {
+        "name": "[parameters('storageType')]"
       },
+      "dependsOn": [],
+      "tags": {},
+      "kind": "StorageV2",
       "properties": {
-        "Application_Type": "web",
-        "applicationId": "[resourceId('Microsoft.Web/sites', variables('appServiceName'))]"
+        "supportsHttpsTrafficOnly": true,
+        "encryption": {
+          "keySource": "Microsoft.Storage",
+          "services": {
+            "blob": {
+              "enabled": true
+            },
+            "file": {
+              "enabled": true
+            }
+          }
+        }
       }
     },
     {
@@ -111,17 +118,7 @@
             }
           }
         }
-      },
-      "resources": [
-        {
-          "name": "default/puzzles",
-          "type": "blobServices/containers",
-          "apiVersion": "2018-07-01",
-          "dependsOn": [
-            "[variables('appStorageName')]"
-          ]
-        }
-      ]
+      }
     },
     {
       "name": "[variables('appServiceName')]",
@@ -134,8 +131,7 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
-        "[resourceId('Microsoft.Storage/storageAccounts', variables('appStorageName'))]",
-        "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]"
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('appStorageName'))]"
       ],
       "properties": {
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]",
@@ -147,7 +143,8 @@
           "ftpsState": "Disabled",
           "cors": {
             "allowedOrigins": [
-              "[variables('spaUri')]"
+              "[variables('spaReaderUri')]",
+              "[variables('spaWriterUri')]"
             ],
             "supportCredentials": true
           }
@@ -164,272 +161,24 @@
       "properties": {
         "AzureWebJobsDisableHomepage": "true",
         "AzureWebJobsStorage": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('appStorageName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('appStorageName')), '2018-02-01').keys[0].value)]",
-        "Storage": "[concat('DefaultEndpointsProtocol=https;AccountName=',variables('appStorageName'),';AccountKey=',listKeys(resourceId('Microsoft.Storage/storageAccounts', variables('appStorageName')), '2018-02-01').keys[0].value)]",
         "FUNCTIONS_WORKER_RUNTIME": "dotnet",
         "FUNCTIONS_EXTENSION_VERSION": "~3",
         "WEBSITE_RUN_FROM_PACKAGE": "1",
-        "APPINSIGHTS_INSTRUMENTATIONKEY": "[reference(resourceId('Microsoft.Insights/components', variables('appInsightsName')), '2015-05-01').InstrumentationKey]"
+
+        "AzureAD:Audience": "",
+        "AzureAD:ClientId": "",
+        "AzureAD:TenantId": ""
       }
-    },
-    {
-      "name": "[variables('appAlertActionGroup')]",
-      "type": "microsoft.insights/actionGroups",
-      "location": "Global",
-      "apiVersion": "2019-06-01",
-      "properties": {
-        "groupShortName": "webAppAG",
-        "enabled": true,
-        "emailReceivers": [],
-        "smsReceivers": [],
-        "webhookReceivers": [],
-        "itsmReceivers": [],
-        "azureAppPushReceivers": [],
-        "automationRunbookReceivers": [],
-        "voiceReceivers": [],
-        "logicAppReceivers": [],
-        "azureFunctionReceivers": [],
-        "armRoleReceivers": [
-          {
-            /*
-           * Use "Owner" role:
-           * https://docs.microsoft.com/en-us/azure/role-based-access-control/built-in-roles#owner
-           */
-            "name": "owner",
-            "roleId": "8e3af657-a8ff-443c-a75c-2fe8c4bcb635",
-            "useCommonAlertSchema": true
-          }
-        ]
-      },
-      "dependsOn": []
-    },
-    {
-      "name": "[variables('appInsightsExceptionQueryName')]",
-      "type": "microsoft.insights/scheduledqueryrules",
-      "location": "[parameters('location')]",
-      "apiVersion": "2018-04-16",
-      "tags": {
-        "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Insights/components/', variables('appInsightsName'))]": "Resource"
-      },
-      "scale": null,
-      "properties": {
-        "description": "Scheduled query to find exceptions occurred in the app in last 5 minutes.",
-        "enabled": "true",
-        "source": {
-          "query": "exceptions",
-          "authorizedResources": [],
-          "dataSourceId": "[resourceId('microsoft.insights/components', variables('appInsightsName'))]",
-          "queryType": "ResultCount"
-        },
-        "schedule": {
-          "frequencyInMinutes": 5,
-          "timeWindowInMinutes": 5
-        },
-        "action": {
-          "odata.type": "Microsoft.WindowsAzure.Management.Monitoring.Alerts.Models.Microsoft.AppInsights.Nexus.DataContracts.Resources.ScheduledQueryRules.AlertingAction",
-          "severity": "2",
-          "trigger": {
-            "thresholdOperator": "GreaterThan",
-            "threshold": 0
-          },
-          "aznsAction": {
-            "actionGroup": [
-              "[resourceId('microsoft.insights/actionGroups', variables('appAlertActionGroup'))]"
-            ]
-          }
-        }
-      },
-      "dependsOn": [
-        "[resourceId('microsoft.insights/components', variables('appInsightsName'))]"
-      ]
-    },
-    /*
-     * See more details about supported metrics:
-     * https://docs.microsoft.com/en-us/azure/azure-monitor/platform/metrics-supported
-     */
-    {
-      "name": "[variables('appHighUsageAlertName')]",
-      "type": "microsoft.insights/metricalerts",
-      "location": "global",
-      "apiVersion": "2018-03-01",
-      "properties": {
-        "description": "High usage of our Company Web App.",
-        "enabled": true,
-        "severity": 4,
-        "scopes": [ "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]" ],
-        "evaluationFrequency": "PT1M",
-        "windowSize": "PT1M",
-        "criteria": {
-          "odata.type": "Microsoft.Azure.Monitor.SingleResourceMultipleMetricCriteria",
-          "allOf": [
-            {
-              "name": "CPU Percentage",
-              "metricName": "CpuPercentage",
-              "dimensions": [],
-              "operator": "GreaterThan",
-              "threshold": "50",
-              "timeAggregation": "Total"
-            }
-          ]
-        },
-        "actions": [
-          {
-            "actionGroupId": "[resourceId('microsoft.insights/actionGroups', variables('appAlertActionGroup'))]"
-          }
-        ]
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Web/serverfarms', variables('appServicePlanName'))]"
-      ]
-    },
-    {
-      "name": "[variables('spaAppPing')]",
-      "type": "Microsoft.Insights/webtests",
-      "location": "[resourceGroup().location]",
-      "apiVersion": "2015-05-01",
-      "dependsOn": [
-        "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
-        "[resourceId('Microsoft.Web/sites', variables('appServiceName'))]"
-      ],
-      "tags": {
-        "[concat('hidden-link:', resourceId('Microsoft.Insights/components', variables('appInsightsName')))]": "Resource",
-        "displayName": "Front page ping test"
-      },
-      "properties": {
-        "SyntheticMonitorId": "[variables('spaAppPing')]",
-        "Name": "[variables('spaAppPing')]",
-        "Description": "SPA app ping test",
-        "Enabled": true,
-        "Frequency": 300,
-        "Timeout": 120,
-        "Kind": "ping",
-        "Locations": [
-          {
-            "Id": "emea-se-sto-edge"
-          },
-          {
-            "Id": "emea-nl-ams-azr"
-          }
-        ],
-        "Configuration": {
-          "WebTest": "[concat('<WebTest Name=\"spaAppPing\" Id=\"bd64298a-fed7-46bf-b6e4-424a4dd671c2\"  Enabled=\"True\"  Timeout=\"120\" xmlns=\"http://microsoft.com/schemas/VisualStudio/TeamTest/2010\" PreAuthenticate=\"True\" Proxy=\"default\">        <Items>        <Request         Method=\"GET\"         Guid=\"af2d44c8-86e8-7ab0-bc73-e12c778c60ea\"         Version=\"1.1\"         Url=\"', variables('spaUri'), '\"         ThinkTime=\"0\"         Timeout=\"120\"         ParseDependentRequests=\"True\"         FollowRedirects=\"True\"         RecordResult=\"True\"         Cache=\"False\"         ResponseTimeGoal=\"0\"         Encoding=\"utf-8\"         ExpectedHttpStatusCode=\"200\"         ExpectedResponseUrl=\"\"         ReportingName=\"\"         IgnoreHttpStatusCode=\"False\" />        </Items>        </WebTest>')]"
-        }
-      }
-    },
-    {
-      "name": "spaAppPingTestAlert",
-      "type": "microsoft.insights/metricalerts",
-      "location": "global",
-      "apiVersion": "2018-03-01",
-      "tags": {
-        "[concat('hidden-link:', resourceId('Microsoft.Insights/components', variables('appInsightsName')))]": "Resource",
-        "[concat('hidden-link:', resourceId('Microsoft.Insights/webtests', variables('spaAppPing')))]": "Resource"
-      },
-      "properties": {
-        "description": "SPA app ping test.",
-        "enabled": true,
-        "severity": 4,
-        "scopes": [
-          "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
-          "[resourceId('Microsoft.Insights/webtests', variables('spaAppPing'))]"
-        ],
-        "evaluationFrequency": "PT5M",
-        "windowSize": "PT15M",
-        "criteria": {
-          "odata.type": "Microsoft.Azure.Monitor.WebtestLocationAvailabilityCriteria",
-          "webTestId": "[resourceId('Microsoft.Insights/webtests', variables('spaAppPing'))]",
-          "componentId": "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
-          "failedLocationCount": 1
-        },
-        "actions": [
-          {
-            "actionGroupId": "[resourceId('microsoft.insights/actionGroups', variables('appAlertActionGroup'))]"
-          }
-        ]
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
-        "[resourceId('Microsoft.Insights/webtests', variables('spaAppPing'))]"
-      ]
-    },
-    {
-      "name": "[variables('backendPing')]",
-      "type": "Microsoft.Insights/webtests",
-      "location": "[resourceGroup().location]",
-      "apiVersion": "2015-05-01",
-      "dependsOn": [
-        "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
-        "[resourceId('Microsoft.Web/sites', variables('appServiceName'))]"
-      ],
-      "tags": {
-        "[concat('hidden-link:', resourceId('Microsoft.Insights/components', variables('appInsightsName')))]": "Resource",
-        "displayName": "Backend ping test"
-      },
-      "properties": {
-        "SyntheticMonitorId": "[variables('backendPing')]",
-        "Name": "[variables('backendPing')]",
-        "Description": "Backend ping test",
-        "Enabled": true,
-        "Frequency": 300,
-        "Timeout": 120,
-        "Kind": "ping",
-        "Locations": [
-          {
-            "Id": "emea-se-sto-edge"
-          },
-          {
-            "Id": "emea-nl-ams-azr"
-          }
-        ],
-        "Configuration": {
-          "WebTest": "[concat('<WebTest Name=\"backendPing\" Id=\"bd64298a-fed7-46bf-b6e4-424a4dd671c2\"  Enabled=\"True\"  Timeout=\"120\" xmlns=\"http://microsoft.com/schemas/VisualStudio/TeamTest/2010\" PreAuthenticate=\"True\" Proxy=\"default\">        <Items>        <Request         Method=\"GET\"         Guid=\"af2d44c8-86e8-7ab0-bc73-e12c778c60ea\"         Version=\"1.1\"         Url=\"', concat('https://',reference(resourceId('Microsoft.Web/sites', variables('appServiceName'))).hostNames[0]), '\"         ThinkTime=\"0\"         Timeout=\"120\"         ParseDependentRequests=\"True\"         FollowRedirects=\"True\"         RecordResult=\"True\"         Cache=\"False\"         ResponseTimeGoal=\"0\"         Encoding=\"utf-8\"         ExpectedHttpStatusCode=\"204\"         ExpectedResponseUrl=\"\"         ReportingName=\"\"         IgnoreHttpStatusCode=\"False\" />        </Items>        </WebTest>')]"
-        }
-      }
-    },
-    {
-      "name": "backendPingTestAlert",
-      "type": "microsoft.insights/metricalerts",
-      "location": "global",
-      "apiVersion": "2018-03-01",
-      "tags": {
-        "[concat('hidden-link:', resourceId('Microsoft.Insights/components', variables('appInsightsName')))]": "Resource",
-        "[concat('hidden-link:', resourceId('Microsoft.Insights/webtests', variables('backendPing')))]": "Resource"
-      },
-      "properties": {
-        "description": "Backend ping test.",
-        "enabled": true,
-        "severity": 4,
-        "scopes": [
-          "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
-          "[resourceId('Microsoft.Insights/webtests', variables('backendPing'))]"
-        ],
-        "evaluationFrequency": "PT5M",
-        "windowSize": "PT15M",
-        "criteria": {
-          "odata.type": "Microsoft.Azure.Monitor.WebtestLocationAvailabilityCriteria",
-          "webTestId": "[resourceId('Microsoft.Insights/webtests', variables('backendPing'))]",
-          "componentId": "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
-          "failedLocationCount": 1
-        },
-        "actions": [
-          {
-            "actionGroupId": "[resourceId('microsoft.insights/actionGroups', variables('appAlertActionGroup'))]"
-          }
-        ]
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Insights/components', variables('appInsightsName'))]",
-        "[resourceId('Microsoft.Insights/webtests', variables('backendPing'))]"
-      ]
     }
   ],
   "outputs": {
-    "appStorageName": {
+    "webStorageNameReader": {
       "type": "string",
-      "value": "[variables('appStorageName')]"
+      "value": "[variables('webStorageNameReader')]"
     },
-    "webStorageName": {
+    "webStorageNameWriter": {
       "type": "string",
-      "value": "[variables('webStorageName')]"
+      "value": "[variables('webStorageNameWriter')]"
     },
     "webAppName": {
       "type": "string",

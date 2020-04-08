@@ -5,8 +5,11 @@ Param (
     [Parameter(HelpMessage="Deployment target resource group location")] 
     [string] $Location = "North Europe",
 
-    [Parameter(HelpMessage="App root folder path to publish e.g. ..\src\AmazerrrWeb\wwwroot\")] 
-    [string] $AppRootFolder,
+    [Parameter(HelpMessage="App root folder path to publish e.g. ..\src\SpaSalesReader\wwwroot\")] 
+    [string] $AppRootFolderReader,
+
+    [Parameter(HelpMessage="App root folder path to publish e.g. ..\src\SpaSalesWriter\wwwroot\")] 
+    [string] $AppRootFolderWriter,
 
     [string] $Template = "$PSScriptRoot\azuredeploy.json",
     [string] $TemplateParameters = "$PSScriptRoot\azuredeploy.parameters.json"
@@ -50,8 +53,8 @@ $result = New-AzResourceGroupDeployment `
     -Mode Complete -Force `
     -Verbose
 
-if ($null -eq $result.Outputs.webStorageName -or
-    $null -eq $result.Outputs.webStorageName -or
+if ($null -eq $result.Outputs.webStorageNameReader -or
+    $null -eq $result.Outputs.webStorageNameWriter -or
     $null -eq $result.Outputs.webAppName -or
     $null -eq $result.Outputs.webAppUri)
 {
@@ -60,37 +63,33 @@ if ($null -eq $result.Outputs.webStorageName -or
 
 $result
 
-$appStorageName = $result.Outputs.appStorageName.value
-$webStorageName = $result.Outputs.webStorageName.value
+$webStorageNameReader = $result.Outputs.webStorageNameReader.value
+$webStorageNameWriter = $result.Outputs.webStorageNameWriter.value
 $webAppName = $result.Outputs.webAppName.value
 $webAppUri = $result.Outputs.webAppUri.value
 
-$webStorageAccount = Get-AzStorageAccount -ResourceGroupName $ResourceGroupName -AccountName $webStorageName
-Enable-AzStorageStaticWebsite -Context $webStorageAccount.Context -IndexDocument index.html -ErrorDocument404Path 404.html
-$webStorageUri = $webStorageAccount.PrimaryEndpoints.Web
-Write-Host "Static website endpoint: $webStorageUri"
+# Setup static website for SPA Reader
+$webReaderStorageAccount = Get-AzStorageAccount -ResourceGroupName $ResourceGroupName -AccountName $webStorageNameReader
+Enable-AzStorageStaticWebsite -Context $webReaderStorageAccount.Context -IndexDocument index.html -ErrorDocument404Path 404.html
+$webReaderStorageUri = $webReaderStorageAccount.PrimaryEndpoints.Web
+Write-Host "Static website endpoint for Reader: $webReaderStorageUri"
 
-# Create table to the storage if it does not exist
-$tableName = "puzzles"
-$appStorageAccount = Get-AzStorageAccount -ResourceGroupName $ResourceGroupName -AccountName $appStorageName
-if ($null -eq (Get-AzStorageTable -Context $appStorageAccount.Context -Name $tableName -ErrorAction SilentlyContinue))
-{
-    Write-Warning "Table '$tableName' doesn't exist and it will be created."
-    New-AzStorageTable -Context $appStorageAccount.Context -Name $tableName
-}
+# Setup static website for SPA Writer
+$webWriterStorageAccount = Get-AzStorageAccount -ResourceGroupName $ResourceGroupName -AccountName $webStorageNameWriter
+Enable-AzStorageStaticWebsite -Context $webWriterStorageAccount.Context -IndexDocument index.html -ErrorDocument404Path 404.html
+$webWriterStorageUri = $webWriterStorageAccount.PrimaryEndpoints.Web
+Write-Host "Static website endpoint for Writer: $webWriterStorageUri"
 
 # Publish variable to the Azure DevOps agents so that they
 # can be used in follow-up tasks such as application deployment
-Write-Host "##vso[task.setvariable variable=Custom.WebStorageName;]$webStorageName"
-Write-Host "##vso[task.setvariable variable=Custom.WebStorageUri;]$webStorageUri"
 Write-Host "##vso[task.setvariable variable=Custom.WebAppName;]$webAppName"
 Write-Host "##vso[task.setvariable variable=Custom.WebAppUri;]$webAppUri"
 
-if (![string]::IsNullOrEmpty($AppRootFolder))
+if (![string]::IsNullOrEmpty($AppRootFolderReader))
 {
     . $PSScriptRoot\deploy_web.ps1 `
         -ResourceGroupName $ResourceGroupName `
         -FunctionsUri $webAppUri `
         -WebStorageName $webStorageAccount.StorageAccountName `
-        -AppRootFolder $AppRootFolder
+        -AppRootFolder $AppRootFolderReader
 }

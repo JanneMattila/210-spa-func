@@ -47,6 +47,10 @@ else
 
 Connect-AzureAD -AadAccessToken $accessToken -AccountId $accountId -TenantId $tenant
 
+$apiAppName = "SPA-FUNC API $EnvironmentName"
+$spaReaderAppName = "SPA-FUNC Sales Reader $EnvironmentName"
+$spaWriterAppName = "SPA-FUNC Sales Writer $EnvironmentName"
+
 ######################
 # Setup functions app:
 # - Expose API "Sales.Read"
@@ -81,7 +85,7 @@ $readWritePermission.UserConsentDisplayName = "Read-write access to sales data"
 $readWritePermission.UserConsentDescription = "Read-write access to sales data"
 $permissions.Add($readWritePermission)
 
-$apiApplication = New-AzureADApplication -DisplayName "SPA-FUNC API $EnvironmentName" `
+$apiApplication = New-AzureADApplication -DisplayName $apiAppName `
     -IdentifierUris "api://spa-func.$EnvironmentName" `
     -PublicClient $false `
     -Oauth2Permissions $permissions
@@ -117,7 +121,7 @@ $readerApi.ResourceAccess.Add($readerSalesRead)
 $readerAccesses.Add($readerGraph)
 $readerAccesses.Add($readerApi)
 
-$readerApplication = New-AzureADApplication -DisplayName "SPA-FUNC Sales Reader $EnvironmentName" `
+$readerApplication = New-AzureADApplication -DisplayName $spaReaderAppName `
     -Oauth2AllowImplicitFlow $true `
     -Homepage $SPAReaderUri `
     -ReplyUrls $SPAReaderUri `

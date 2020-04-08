@@ -6,19 +6,7 @@ Param (
     [string] $SPAReaderUri = "https://localhost:44387/",
     
     [Parameter(HelpMessage="SPA Writer address root uri")] 
-    [string] $SPAWriterUri = "https://localhost:44388/",
-
-    [Parameter(HelpMessage="Deployment target resource group")] 
-    [string] $ResourceGroupName = "rg-spafunc-local",
-    
-    [Parameter(HelpMessage="Azure Functions root uri")] 
-    [string] $FunctionsUri,
-    
-    [Parameter(HelpMessage="Deployment target storage account name")] 
-    [string] $WebStorageName,
-
-    [Parameter(HelpMessage="App root folder path to publish e.g. ..\src\AmazerrrWeb\wwwroot\")] 
-    [string] $AppRootFolder
+    [string] $SPAWriterUri = "https://localhost:44388/"
 )
 
 $ErrorActionPreference = "Stop"
@@ -50,6 +38,17 @@ Connect-AzureAD -AadAccessToken $accessToken -AccountId $accountId -TenantId $te
 $apiAppName = "SPA-FUNC API $EnvironmentName"
 $spaReaderAppName = "SPA-FUNC Sales Reader $EnvironmentName"
 $spaWriterAppName = "SPA-FUNC Sales Writer $EnvironmentName"
+
+$apiApp = Get-AzureADApplication -SearchString $apiAppName
+$spaReaderApp = Get-AzureADApplication -SearchString $spaReaderAppName
+$spaWriterApp = Get-AzureADApplication -SearchString $spaWriterAppName
+
+if ($null -ne $apiApp)
+{
+    # Applications have been already created
+    Write-Host "Applications have been already created"
+    return
+}
 
 ######################
 # Setup functions app:
@@ -85,13 +84,13 @@ $readWritePermission.UserConsentDisplayName = "Read-write access to sales data"
 $readWritePermission.UserConsentDescription = "Read-write access to sales data"
 $permissions.Add($readWritePermission)
 
-$apiApplication = New-AzureADApplication -DisplayName $apiAppName `
+$apiApp = New-AzureADApplication -DisplayName $apiAppName `
     -IdentifierUris "api://spa-func.$EnvironmentName" `
     -PublicClient $false `
     -Oauth2Permissions $permissions
-$apiApplication
+$apiApp
 
-$spn = New-AzureADServicePrincipal -AppId $apiApplication.AppId
+$spn = New-AzureADServicePrincipal -AppId $apiApp.AppId
 
 ###########################
 # Setup SPASalesReader app:
@@ -113,7 +112,7 @@ $readerSalesRead.Id = $readPermission.Id # "Sales.Read"
 $readerSalesRead.Type = "Scope"
 
 $readerApi = New-Object Microsoft.Open.AzureAD.Model.RequiredResourceAccess
-$readerApi.ResourceAppId = $apiApplication.AppId # "SPA FUNC"
+$readerApi.ResourceAppId = $apiApp.AppId # "SPA FUNC"
 $readerApi.ResourceAccess = New-Object System.Collections.Generic.List[Microsoft.Open.AzureAD.Model.ResourceAccess]
 $readerApi.ResourceAccess.Add($readerSalesRead)
 
@@ -121,8 +120,50 @@ $readerApi.ResourceAccess.Add($readerSalesRead)
 $readerAccesses.Add($readerGraph)
 $readerAccesses.Add($readerApi)
 
-$readerApplication = New-AzureADApplication -DisplayName $spaReaderAppName `
+$spaReaderApp = New-AzureADApplication -DisplayName $spaReaderAppName `
     -Oauth2AllowImplicitFlow $true `
     -Homepage $SPAReaderUri `
     -ReplyUrls $SPAReaderUri `
     -RequiredResourceAccess $readerAccesses
+$spaReaderApp
+
+###########################
+# Setup SPASalesWriter app:
+$writerAccesses = New-Object System.Collections.Generic.List[Microsoft.Open.AzureAD.Model.RequiredResourceAccess]
+
+# API permission for "User.Read" in Microsoft Graph
+$writerUserRead = New-Object Microsoft.Open.AzureAD.Model.ResourceAccess
+$writerUserRead.Id = $userRead # "User.Read"
+$writerUserRead.Type = "Scope"
+
+$writerGraph = New-Object Microsoft.Open.AzureAD.Model.RequiredResourceAccess
+$writerGraph.ResourceAppId = $microsoftGraphAPI # "Microsoft Graph API"
+$writerGraph.ResourceAccess = New-Object System.Collections.Generic.List[Microsoft.Open.AzureAD.Model.ResourceAccess]
+$writerGraph.ResourceAccess.Add($writerUserRead)
+
+# API permission for "Sales.Read" in SPA-FUNC
+$writerSalesRead = New-Object Microsoft.Open.AzureAD.Model.ResourceAccess
+$writerSalesRead.Id = $readPermission.Id # "Sales.Read"
+$writerSalesRead.Type = "Scope"
+
+# API permission for "Sales.Read" in SPA-FUNC
+$writerSalesReadWrite = New-Object Microsoft.Open.AzureAD.Model.ResourceAccess
+$writerSalesReadWrite.Id = $readWritePermission.Id # "Sales.ReadWrite"
+$writerSalesReadWrite.Type = "Scope"
+
+$writerApi = New-Object Microsoft.Open.AzureAD.Model.RequiredResourceAccess
+$writerApi.ResourceAppId = $apiApp.AppId # "SPA FUNC"
+$writerApi.ResourceAccess = New-Object System.Collections.Generic.List[Microsoft.Open.AzureAD.Model.ResourceAccess]
+$writerApi.ResourceAccess.Add($writerSalesRead)
+$writerApi.ResourceAccess.Add($writerSalesReadWrite)
+
+# Add required accesses
+$writerAccesses.Add($writerGraph)
+$writerAccesses.Add($writerApi)
+
+$spaWriterApp = New-AzureADApplication -DisplayName $spaWriterAppName `
+    -Oauth2AllowImplicitFlow $true `
+    -Homepage $SPAWriterUri `
+    -ReplyUrls $SPAWriterUri `
+    -RequiredResourceAccess $writerAccesses
+$spaWriterApp

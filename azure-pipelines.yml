@@ -53,10 +53,16 @@ stages:
         diagnosticsEnabled: True
 
     - task: PublishBuildArtifacts@1
-      displayName: 'Publish Artifact: web'
+      displayName: 'Publish Artifact: SpaSalesReader'
       inputs:
-        PathtoPublish: 'src/AmazerrrWeb/wwwroot'
-        ArtifactName: web
+        PathtoPublish: 'src/SpaSalesReader/wwwroot'
+        ArtifactName: spareaderweb
+
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifact: SpaSalesWriter'
+      inputs:
+        PathtoPublish: 'src/SpaSalesWriter/wwwroot'
+        ArtifactName: spawriterweb
 
     - task: PublishBuildArtifacts@1
       displayName: 'Publish Artifact: app'
@@ -73,4 +79,4 @@ stages:
 - template: azure-pipelines-deploy.yml
   parameters:
     environtName: 'Dev'
-    resourceGroupName: 'rg-amazerr-dev'
+    resourceGroupName: 'rg-spafunc-dev'

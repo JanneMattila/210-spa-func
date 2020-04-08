@@ -29,17 +29,23 @@ stages:
               downloadPath: '$(System.DefaultWorkingDirectory)'
 
           - task: DownloadBuildArtifacts@0
-            displayName: 'Download Build Artifacts: web'
+            displayName: 'Download Build Artifacts: SpaSalesReader'
             inputs:
-              artifactName: web
+              artifactName: spareaderweb
               downloadPath: '$(System.DefaultWorkingDirectory)'
-          
+
+          - task: DownloadBuildArtifacts@0
+            displayName: 'Download Build Artifacts: SpaSalesWriter'
+            inputs:
+              artifactName: spawriterweb
+              downloadPath: '$(System.DefaultWorkingDirectory)'
+              
           - task: AzurePowerShell@4
             displayName: 'Azure PowerShell script: FilePath'
             inputs:
               azureSubscription: AzureDevSubscription
               ScriptPath: '$(System.DefaultWorkingDirectory)/deploy/deploy.ps1'
-              ScriptArguments: '-ResourceGroupName ${{ parameters.resourceGroupName }} -AppRootFolder "$(System.DefaultWorkingDirectory)/web/"'
+              ScriptArguments: '-ResourceGroupName ${{ parameters.resourceGroupName }} -EnvironmentName ${{ parameters.environtName }} -AppRootFolderReader "$(System.DefaultWorkingDirectory)/spareaderweb/" -AppRootFolderWriter "$(System.DefaultWorkingDirectory)/spawriterweb/"'
               azurePowerShellVersion: LatestVersion
           
           - task: AzureRmWebAppDeployment@4

@@ -4,7 +4,16 @@ Param (
     
     [Parameter(HelpMessage="Azure Functions root uri")] 
     [string] $FunctionsUri,
-    
+        
+    [Parameter(HelpMessage="Azure AD Application Id")] 
+    [string] $ClientId,
+
+    [Parameter(HelpMessage="Azure AD Tenant Id")] 
+    [string] $TenantId,
+
+    [Parameter(HelpMessage="Azure AD application identifier uri")] 
+    [string] $ApplicationIdURI,
+
     [Parameter(HelpMessage="Deployment target storage account name")] 
     [string] $WebStorageName,
 
@@ -47,7 +56,14 @@ $storageAccount = Get-AzStorageAccount -ResourceGroupName $ResourceGroupName -Ac
 $webStorageUri = $storageAccount.PrimaryEndpoints.Web
 Write-Host "Static website endpoint: $webStorageUri"
 
-"{ `"endpoint`": `"$FunctionsUri`" }" | Set-Content (Join-Path -Path $AppRootFolder -ChildPath configuration.json)
+@"
+{ 
+  `"endpoint`": `"$FunctionsUri`", 
+  `"clientId`": `"$ClientId`",
+  `"tenantId`": `"$TenantId`",
+  `"applicationIdURI`": `"$ApplicationIdURI`"
+}
+"@ | Set-Content (Join-Path -Path $AppRootFolder -ChildPath configuration.json)
 
 Get-ChildItem -File -Recurse $AppRootFolder `
     | ForEach-Object  { 

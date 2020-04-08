@@ -10,12 +10,15 @@ Param (
 
     [Parameter(HelpMessage="Flag to indicate if AzureAD applications automation should be executed")] 
     [switch] $DeployToAzureAD,
+    
+    [Parameter(HelpMessage="Flag to indicate if SPA apps should be deployed")] 
+    [switch] $DeploySPAs,
 
     [Parameter(HelpMessage="App root folder path to publish e.g. ..\src\SpaSalesReader\wwwroot\")] 
-    [string] $AppRootFolderReader,
+    [string] $AppRootFolderReader = "..\src\SpaSalesReader\wwwroot\",
 
     [Parameter(HelpMessage="App root folder path to publish e.g. ..\src\SpaSalesWriter\wwwroot\")] 
-    [string] $AppRootFolderWriter,
+    [string] $AppRootFolderWriter = "..\src\SpaSalesWriter\wwwroot\",
 
     [string] $Template = "$PSScriptRoot\azuredeploy.json",
     [string] $TemplateParameters = "$PSScriptRoot\azuredeploy.parameters.json"
@@ -106,11 +109,31 @@ if ($DeployToAzureAD)
         -UpdateReplyUrl # Update reply urls
 }
 
-if (![string]::IsNullOrEmpty($AppRootFolderReader))
+if ($DeploySPAs)
 {
-    . $PSScriptRoot\deploy_web.ps1 `
-        -ResourceGroupName $ResourceGroupName `
-        -FunctionsUri $webAppUri `
-        -WebStorageName $webStorageAccount.StorageAccountName `
-        -AppRootFolder $AppRootFolderReader
+    if (![string]::IsNullOrEmpty($AppRootFolderReader))
+    {
+        # Deploy SPA Reader
+        . $PSScriptRoot\deploy_web.ps1 `
+            -ResourceGroupName $ResourceGroupName `
+            -FunctionsUri $webAppUri `
+            -ClientId $azureADdeployment.ReaderApp `
+            -TenantId $azureADdeployment.TenantId `
+            -ApplicationIdURI $azureADdeployment.ApplicationIdURI `
+            -WebStorageName $webReaderStorageAccount.StorageAccountName `
+            -AppRootFolder $AppRootFolderReader
+    }
+
+    if (![string]::IsNullOrEmpty($AppRootFolderWriter))
+    {
+        # Deploy SPA Writer
+        . $PSScriptRoot\deploy_web.ps1 `
+            -ResourceGroupName $ResourceGroupName `
+            -FunctionsUri $webAppUri `
+            -ClientId $azureADdeployment.WriterApp `
+            -TenantId $azureADdeployment.TenantId `
+            -ApplicationIdURI $azureADdeployment.ApplicationIdURI `
+            -WebStorageName $webWriterStorageAccount.StorageAccountName `
+            -AppRootFolder $AppRootFolderWriter
+    }
 }
